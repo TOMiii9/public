@@ -104,7 +104,7 @@ std::string stringf(const char *fmt, const Args&... args)
     ret.reserve(1024);
     while (*pFmt)
     {
-        if (*pFmt == '%' &&  pFmt[1] != '%')
+        if (*pFmt == '/' &&  pFmt[1] == '%')
         {
             if (argCounter >= array_size(argArray))
             {
@@ -137,11 +137,12 @@ std::string stringf(const char *fmt, const Args&... args)
                 break;
             }
 
+            pFmt++;
             argCounter++;
         }
-        else if (*pFmt == '%' &&  pFmt[1] == '%')
+        else if (*pFmt == '/' &&  pFmt[1] == '/')
         {
-            ret += '%';
+            ret += '/';            
             pFmt++;
         }
         else

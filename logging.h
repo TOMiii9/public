@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <cstdio>
 #include <string>
+#include <Windows.h>
 #include "stringfmt.h"
 
 class log
@@ -42,7 +43,7 @@ protected:
     void print_line(const std::string &line)
     {
         // mutex lock
-        printf(line.c_str());
+        OutputDebugStringA(line.c_str());
     }
 
 public:
@@ -50,7 +51,7 @@ public:
     template <typename ...Args>
     static void info(const char *fmt, const Args&... args)
     {
-        std::string line = {"[INFO]" + stringf(fmt, args...)};
+        std::string line = {"[INFO] " + stringf(fmt, args...)};
         
         it().print_line(line);
     }
