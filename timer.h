@@ -45,10 +45,10 @@ public:
         QueryPerformanceCounter(&StartingTime);
     }
 
-    double getTime()
+    double getTimeMs()
     {        
         QueryPerformanceCounter(&EndingTime);        
-        return ((double(EndingTime.QuadPart - StartingTime.QuadPart) * 1000000.0) / Frequency);
+        return ((double(EndingTime.QuadPart - StartingTime.QuadPart) * 1000.0) / Frequency);
     }
 
 };

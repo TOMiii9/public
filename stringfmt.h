@@ -101,7 +101,7 @@ std::string stringf(const char *fmt, const Args&... args)
     char            *pFmt           = const_cast<char *>(fmt);        
     ConcreteArgType argArray[]      = {args...};    
 
-    ret.reserve(1024);
+    // ret.reserve(512);
     while (*pFmt)
     {
         if (*pFmt == '/' &&  pFmt[1] == '%')
@@ -154,6 +154,11 @@ std::string stringf(const char *fmt, const Args&... args)
     }
 
     return ret;
+}
+
+std::string stringf(const char *fmt)
+{
+    return fmt;
 }
 
 #endif

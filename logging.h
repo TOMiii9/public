@@ -44,6 +44,7 @@ protected:
     {
         // mutex lock
         OutputDebugStringA(line.c_str());
+        printf(line.c_str());
     }
 
 public:
@@ -51,8 +52,7 @@ public:
     template <typename ...Args>
     static void info(const char *fmt, const Args&... args)
     {
-        std::string line = {"[INFO] " + stringf(fmt, args...)};
-        
+        std::string line = {"[INFO] " + stringf(fmt, args...)};        
         it().print_line(line);
     }
 };
