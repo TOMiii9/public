@@ -25,6 +25,14 @@ SOFTWARE.
 #ifndef STRINGF_H_
 #define STRINGF_H_
 
+#include <string>
+#include <assert.h>
+
+void sys_error()
+{
+    *(int *) 1 = 0;
+}
+
 struct ConcreteArgType
 {
     enum InternalType
