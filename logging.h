@@ -25,26 +25,30 @@ SOFTWARE.
 #ifndef LOG_H_
 #define LOG_H_
 
+#include <Windows.h>
+
 #include <cstdio>
 #include <string>
-#include <Windows.h>
+#include <mutex>
 #include "stringfmt.h"
 
 class log
-{
+{    
 protected:
     
+    std::mutex  mLogMutex;
+
     static log& it()
     {
         static log theInstance;
         return theInstance;
     }
 
-    void print_line(const std::string &line)
+    void printLine(const std::string &line)
     {
-        // mutex lock
+        std::lock_guard<std::mutex> lock{mLogMutex};
+
         OutputDebugStringA(line.c_str());
-        printf(line.c_str());
     }
 
 public:
@@ -52,8 +56,15 @@ public:
     template <typename ...Args>
     static void info(const char *fmt, const Args&... args)
     {
-        std::string line = {"[INFO] " + stringf(fmt, args...)};        
-        it().print_line(line);
+        std::string line = {"   [INFO] " + stringf(fmt, args...)};        
+        it().printLine(line);
+    }
+
+    template <typename ...Args>
+    static void error(const char *fmt, const Args&... args)
+    {
+        std::string line = {"  [ERROR] " + stringf(fmt, args...)};
+        it().printLine(line);
     }
 };
 

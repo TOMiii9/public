@@ -87,7 +87,7 @@ struct ConcreteArgType
 };
 
 template <typename Type, std::size_t N>
-constexpr std::size_t array_size(const Type (&)[N])
+constexpr std::size_t arraySize(const Type (&)[N])
 {
     return N;
 }
@@ -106,7 +106,7 @@ std::string stringf(const char *fmt, const Args&... args)
     {
         if (*pFmt == '/' &&  pFmt[1] == '%')
         {
-            if (argCounter >= array_size(argArray))
+            if (argCounter >= arraySize(argArray))
             {
                 assert("check those parameters" && 0);
                 break;
