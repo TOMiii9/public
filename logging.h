@@ -30,13 +30,24 @@ SOFTWARE.
 #include <cstdio>
 #include <string>
 #include <mutex>
+#include <fstream>
+#include "timer.h"
+
 #include "stringfmt.h"
 
 class log
 {    
 protected:
     
-    std::mutex  mLogMutex;
+    HighResTimer    mTimer;
+
+    std::ofstream   mLogFile;
+    std::mutex      mLogMutex;
+
+    log()
+    {
+        mLogFile.open("debug.txt");    
+    }
 
     static log& it()
     {
@@ -47,6 +58,12 @@ protected:
     void printLine(const std::string &line)
     {
         std::lock_guard<std::mutex> lock{mLogMutex};
+
+        if (mLogFile.is_open())
+        {
+            mLogFile << line;
+            mLogFile.flush();
+        }
 
         OutputDebugStringA(line.c_str());
     }

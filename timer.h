@@ -21,6 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ******************************************************************************/
+
+#ifndef HIGHRES_TIMER_H_
+#define HIGHRES_TIMER_H_
+
 #include <Windows.h>
 
 class HighResTimer
@@ -52,3 +56,5 @@ public:
     }
 
 };
+
+#endif

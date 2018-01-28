@@ -27,6 +27,7 @@ SOFTWARE.
 
 #include <string>
 #include <assert.h>
+#include <stdint.h>
 
 void sys_error()
 {
@@ -40,16 +41,18 @@ struct ConcreteArgType
         FLOAT,
         DOUBLE,
         INT32,
+        INT64,
         CHAR,
         STR
     } type;
 
     union UValue
     {
-       float fl_value;
-       double dbl_value;
-       int int32_value;
-       char chr_value;       
+        __int64 int64_value;
+        float fl_value;
+        double dbl_value;
+        int int32_value;
+        char chr_value;       
     };
 
     std::string str_value;
@@ -80,6 +83,10 @@ struct ConcreteArgType
         str_value = str;
     }
 
+    ConcreteArgType(__int64 i64) : type(INT64)
+    {
+        value.int64_value = i64;
+    }
 
     ~ConcreteArgType()
     {
@@ -130,6 +137,9 @@ std::string stringf(const char *fmt, const Args&... args)
                 break;
             case ConcreteArgType::STR:
                 ret.append(arg.str_value);
+                break;
+            case ConcreteArgType::INT64:
+                ret.append(std::to_string(arg.value.int64_value));
                 break;
 
             default:
