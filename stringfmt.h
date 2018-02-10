@@ -164,7 +164,7 @@ std::string stringf(const char *fmt, const Args&... args)
 
 std::string stringf(const char *fmt);
 
-#if STRINGF_IMPLEMENTATTION
+#if STRINGF_IMPLEMENTATION
 
 std::string stringf(const char *fmt)
 {

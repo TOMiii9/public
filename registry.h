@@ -25,6 +25,9 @@ SOFTWARE.
 #ifndef REGISTRY_H_
 #define REGISTRY_H_
 
+#include <map>
+#include <string>
+
 void reg_load();
 void reg_save();
 void reg_set_string(const char *name, const char *value);
@@ -33,12 +36,18 @@ void reg_set_float64(const char *name, double value);
 
 #ifdef REGISTRY_IMPLEMENTATION
 
-void reg_load()
+namespace
+{
+    std::map<std::string, std::string> kv_pairs;
+
+}
+
+void reg_load(const char *file_name)
 {
 	
 }
 
-void reg_save()
+void reg_save(const char *file_name)
 {	
 
 }
