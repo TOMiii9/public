@@ -46,7 +46,7 @@ protected:
 
     log()
     {
-        mLogFile.open("debug.txt");    
+        //mLogFile.open("debug.txt");    
     }
 
     static log& it()

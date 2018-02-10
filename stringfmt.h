@@ -29,11 +29,6 @@ SOFTWARE.
 #include <assert.h>
 #include <stdint.h>
 
-void sys_error()
-{
-    *(int *) 1 = 0;
-}
-
 struct ConcreteArgType
 {
     enum InternalType
@@ -166,9 +161,16 @@ std::string stringf(const char *fmt, const Args&... args)
     return ret;
 }
 
+
+std::string stringf(const char *fmt);
+
+#if STRINGF_IMPLEMENTATTION
+
 std::string stringf(const char *fmt)
 {
     return fmt;
 }
+
+#endif
 
 #endif
