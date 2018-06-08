@@ -32,13 +32,18 @@ SOFTWARE.
 #include <sstream>
 #include <Windows.h>
 
-void reg_load(const char *file_name);
+bool reg_load(const char *file_name);
 void reg_save(const char *file_name);
+
 void reg_set_string(const char *name, const char *value);
 void reg_set_int32(const char *name, int value);
+void reg_set_float32(const char *name, float value);
 void reg_set_float64(const char *name, double value);
 
+std::string reg_get_string(const char *name, const char* default_value);
 int reg_get_int32(const char *name, int default_value);
+float reg_get_float32(const char *name, float default_value);
+double reg_get_float64(const char *name, double default_value);
 
 
 #ifdef REGISTRY_IMPLEMENTATION
@@ -79,12 +84,14 @@ namespace
 
 }
 
-void reg_load(const char *file_name)
+bool reg_load(const char *file_name)
 {
     if (file_exists(file_name))
     {
         std::ifstream in("config.txt");
         std::string str;
+        
+        kv_pairs.clear();
 
         while (std::getline(in, str)) 
         {
@@ -105,13 +112,11 @@ void reg_load(const char *file_name)
                 kv_pairs[tokens[0]] = value;
             }
         }
+
+        return true;
     }
-    else
-    {
-        // defaults
-        reg_set_int32("r_threads", 1);
-        reg_save("config.txt");
-    }
+
+    return false;
 }
 
 void reg_save(const char *file_name)
@@ -127,7 +132,7 @@ void reg_save(const char *file_name)
 
 void reg_set_string(const char *name, const char *value)
 {
-    sys_error("Not implemented reg_set_string");
+    kv_pairs[name] = value;
 }
 
 void reg_set_int32(const char *name, int value)
@@ -135,9 +140,24 @@ void reg_set_int32(const char *name, int value)
     kv_pairs[name] = std::to_string(value);
 }
 
+void reg_set_float32(const char *name, float value)
+{
+    kv_pairs[name] = std::to_string(value);
+}
+
 void reg_set_float64(const char *name, double value)
 {
-    sys_error("Not implemented reg_set_float64");
+    kv_pairs[name] = std::to_string(value);
+}
+
+std::string reg_get_string(const char *name, const char* default_value)
+{
+    auto value = kv_pairs.find(name);
+    if (value != kv_pairs.end())
+    {        
+        return value->second;
+    }
+    return default_value;
 }
 
 int reg_get_int32(const char *name, int default_value)
@@ -146,6 +166,28 @@ int reg_get_int32(const char *name, int default_value)
     if (value != kv_pairs.end())
     {
         int ret = atoi(value->second.c_str());
+        return ret;
+    }
+    return default_value;
+}
+
+float reg_get_float32(const char *name, float default_value)
+{
+    auto value = kv_pairs.find(name);
+    if (value != kv_pairs.end())
+    {
+        float ret = std::stof(value->second.c_str());
+        return ret;
+    }
+    return default_value;
+}
+
+double reg_get_float64(const char *name, double default_value)
+{
+    auto value = kv_pairs.find(name);
+    if (value != kv_pairs.end())
+    {
+        double ret = std::stod(value->second.c_str());
         return ret;
     }
     return default_value;
