@@ -31,6 +31,7 @@ SOFTWARE.
 #include <fstream>
 #include <sstream>
 #include <Windows.h>
+#include <vector>
 
 bool reg_load(const char *file_name);
 void reg_save(const char *file_name);
