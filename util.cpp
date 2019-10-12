@@ -1,8 +1,6 @@
 #include "util.h"
 #include "timer.h"
 #include "windows.h"
-#include "memory.h"
-#include "containers.h"
 
 #include <assert.h>
 #include <fcntl.h>
@@ -16,12 +14,14 @@
 #include <locale>
 #include <codecvt>
 
-static High_Res_Timer        timer;
-static thread_local uint32_t random_state       = 1234;
-static bool                  already_panicked   = false;
-static bool                  shutdown_requested = false;
-static f32                   frame_time         = 0.0f;
-static string                debug_info         = "";
+/*#ifdef max
+#undef max
+#endif*/
+
+// TODO: get rid of the thread_local stuff - but keep it fast!
+thread_local uint32_t random_state = 1234;
+static HighResTimer   timer;
+static bool           already_panicked = false;
 
 inline uint32_t xorshift32() {
     random_state ^= random_state << 13;
@@ -151,11 +151,11 @@ f32 str_to_f32(const std::string &string, f32 default_value) {
 }
 
 f64 get_time_micro() {
-    return timer.get_time_micro();
+    return timer.getTimeMicro();
 }
 
-i32 get_time_ms() {
-    return i32(timer.get_time_ms());
+f64 get_time_ms() {
+    return timer.getTimeMs();
 }
 
 i32 random_i32(i32 upper_bound) {
@@ -213,6 +213,8 @@ vec3 rgb2vec3(i32 r, i32 g, i32 b, f32 intensity) {
                 map_range(f32(b), 0.0f, 256.0f, 0.0f, 1.0f) * intensity);
 }
 
+#if 1
+// new
 std::string stringf(const char *format, ...) {
     std::string string_buffer;
     va_list     args;
@@ -233,6 +235,33 @@ std::string stringf(const char *format, ...) {
     return string_buffer;
 }
 
+#else
+
+// old
+std::string stringf(const char *format, ...) {
+    static std::string string_buffer;
+    va_list            args;
+    int                newLen;
+
+    va_start(args, format);
+    newLen = _vscprintf(format, args) + 1;
+    va_end(args);
+
+    if (newLen > string_buffer.capacity()) {
+        string_buffer.resize(newLen, 0);
+    }
+
+    va_start(args, format);
+    vsprintf_s((char *)string_buffer.c_str(), newLen, format, args);
+    va_end(args);
+
+    // we don;t want that zero at the end
+    string_buffer.pop_back();
+
+    return string_buffer;
+}
+#endif
+
 std::wstring string_to_wstring(const std::string &string) {
     // std::string                                            narrow = converter.to_bytes(wide_utf16_source_string);
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -241,7 +270,7 @@ std::wstring string_to_wstring(const std::string &string) {
     return wide;
 }
 
-void take_screenshot(const char *file_name, Array_Of<u8> &color_buffer, i32 w, i32 h) {
+void take_screenshot(const char *file_name, array_of<u8> &color_buffer, i32 w, i32 h) {
     std::ofstream text_file;
     text_file.open(file_name);
 
@@ -263,123 +292,42 @@ void panic(string panic_string) {
 
     already_panicked = true;
     report("\n\n****** Panic! ******\n\n%s\n", panic_string.c_str());
-
-    MessageBoxA(0, panic_string.c_str(), "Error", MB_OK + MB_ICONERROR);
-
-    if (!!IsDebuggerPresent()) {
-        while (1) {
-            report("\n!!! Debugbreak !!!\n");
-            DebugBreak();
-            Sleep(250);
-        }
-    } else {
-        ExitProcess(0);
-    }
+    MessageBoxA(0, panic_string.c_str(), "System failure", MB_OK + MB_ICONERROR);
+    ExitProcess(0);
 }
 
-void set_frame_time(f32 ft) {
-    frame_time = ft;
+void util_test_code() {
+    sse_f32x4 a;
+    sse_f32x4 b;
+    sse_f32x4 c;
 
-    if (frame_time > 0.035f) {
-        report("***** perf warning *****\n");
-        frame_time = 0.035f;
-    }
-}
+    a.a4 = _mm_set_ps(1.0f, 2.0f, 3.0f, 4.0f);
+    b.a4 = _mm_set_ps(2.0f, 2.0f, 2.0f, 2.0f);
 
-f32 get_frame_time() {
-    return frame_time;
-}
+    c.a4 = _mm_mul_ps(a.a4, b.a4);
 
-f32 dampen(f32 source, f32 smoothing, f32 dt) {
-    return source * powf(smoothing, dt);
-}
+    __m128 mask = _mm_cmpge_ps(a.a4, _mm_set_ps(4.0f, 4.0f, 4.0f, 4.0f));
 
-#define pow2(x) ((x) * (x))
-#define pow3(x) ((x) * (x) * (x))
+    report("%f %f %f %f\n", a.a[0], a.a[1], a.a[2], a.a[3]);
+    report("%f %f %f %f\n", b.a[0], b.a[1], b.a[2], b.a[3]);
+    report("--------------\n");
+    report("%f %f %f %f\n", c.a[0], c.a[1], c.a[2], c.a[3]);
 
-//
-// Assuming :
-//	t is a value between 0 and 1
-//
-f32 ease_in(f32 t, f32 offset, f32 height) {
-    return height * pow3(t) + offset;
-}
+    i32 result = _mm_movemask_ps(mask);
 
-f32 ease_out(f32 t, f32 offset, f32 height) {
-    return height * (pow3(t - 1.0f) + 1.0f) + offset;
-}
-
-f32 ease_in_out(f32 t, f32 offset, f32 height) {
-    if ((t * 2.0f) < 1.0f) {
-        return height / 2.0f * pow3(t * 2.0f) + offset;
-    } else {
-        return height / 2.0f * (pow3(t * 2.0f - 2.0f) + 2.0f) + offset;
-    }
-}
-
-void check_nan(vec3 &v) {
-    if (_isnanf(v[0]) || _isnanf(v[1]) || _isnanf(v[2])) {
-        report("nan detected\n");
-    }
-}
-
-struct Alignment_Test {
-    i32 integer_1;
-    i32 integer_2;
-    i32 integer_3;
-    u8  char_1;
-};
-
-void run_test_functions() {
-    /*Linear_Allocator *frame_allocator = get_frame_allocator();
-    frame_allocator->reset();
-
-    Temp_Array<i32> int_array(64);
-
-    for (i32 i = 1; i < 65; i++) {
-        int_array.append(i);
+    if (result & 1) {
+        report("result & 1\n");
     }
 
-    for (i32 i = 65; i <= 128; i++) {
-        int_array.append(i);
+    if (result & 2) {
+        report("result & 2\n");
     }
 
-    for (i32 i = 0; i < 100; i++) {
-        report("i = %d\n", int_array[i]);
+    if (result & 4) {
+        report("result & 4\n");
     }
 
-    int_array.clear();
-    frame_allocator->reset();
-
-    for (i32 i = 1; i < 65; i++) {
-        int_array.append(i);
+    if (result & 8) {
+        report("result & 8\n");
     }
-
-    for (i32 i = 65; i <= 128; i++) {
-        int_array.append(i);
-    }
-
-    for (i32 i = 0; i < 100; i++) {
-        report("i = %d\n", int_array[i]);
-    }*/
-}
-
-string &get_debug_string() {
-    return debug_info;
-}
-
-void set_debug_string(const string &s) {
-    debug_info = s;
-}
-
-void append_debug_string(const string &s) {
-    debug_info += s;
-}
-
-void request_game_shutdown() {
-    shutdown_requested = true;
-}
-
-bool is_game_shutting_down() {
-    return shutdown_requested;
 }
