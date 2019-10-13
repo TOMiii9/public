@@ -85,14 +85,7 @@ bool reg_load(const char *file_name) {
 }
 
 void reg_save(const char *file_name) {
-    std::unique_lock registry_lock(registry_mutex);
-
-    for (auto &pair : kv_pairs) {
-        std::ofstream f;
-
-        f.open(file_name);
-        f << pair.first << " " << pair.second << "\n";
-    }
+	*(int*)1 = 0; // not implemented
 }
 
 void reg_set_string(const char *name, const char *value) {
