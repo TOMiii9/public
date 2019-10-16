@@ -29,6 +29,19 @@ struct High_Res_Timer {
         QueryPerformanceCounter(&EndingTime);
         return ((double(EndingTime.QuadPart - StartingTime.QuadPart) * 1000000.0) / Frequency);
     }
+
+	static High_Res_Timer* it() {
+		static High_Res_Timer timer;
+		return &timer;
+	}
+
+	static double msec() {
+		return it()->get_time_ms();
+	}
+
+	static double nanosec() {
+		return it()->get_time_ms();
+	}
 };
 
 #endif
