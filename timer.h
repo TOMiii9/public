@@ -39,8 +39,8 @@ struct High_Res_Timer {
 		return it()->get_time_ms();
 	}
 
-	static double nanosec() {
-		return it()->get_time_ms();
+	static double microsec() {
+		return it()->get_time_micro();
 	}
 };
 
