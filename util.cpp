@@ -14,13 +14,9 @@
 #include <locale>
 #include <codecvt>
 
-/*#ifdef max
-#undef max
-#endif*/
-
 // TODO: get rid of the thread_local stuff - but keep it fast!
 thread_local uint32_t random_state = 1234;
-static HighResTimer   timer;
+static High_Res_Timer timer;
 static bool           already_panicked = false;
 
 inline uint32_t xorshift32() {
@@ -31,8 +27,8 @@ inline uint32_t xorshift32() {
     return random_state;
 }
 
-static std::mutex g_reportMutex;
-// static FILE *      g_logFile             = fopen("_debug.txt", "w");
+static std::mutex  g_reportMutex;
+static FILE *      g_logFile             = fopen("_debug.txt", "w");
 static std::string g_debug_string_buffer = "init";
 
 void report(const char *format, ...) {
@@ -81,12 +77,12 @@ void report(const char *format, ...) {
         printf(stringBuffer.c_str());
     }
 
-    // fprintf_s(g_logFile, "%s", stringBuffer.c_str());
-    // fflush(g_logFile);
+    fprintf_s(g_logFile, "%s", stringBuffer.c_str());
+    fflush(g_logFile);
 }
 
-string_array vector_file(const char *file_name) {
-    string_array  content = {""};
+String_Array VectorFile(const char *file_name) {
+    String_Array  content = {""};
     std::string   line;
     std::ifstream ifs(file_name);
 
@@ -99,7 +95,16 @@ string_array vector_file(const char *file_name) {
     return content;
 }
 
-std::string string_file(const char *file_name) {
+std::string StringFile(const char *file_name) {
+#if 1
+    std::ifstream ifs(file_name);
+    if (!ifs.good()) {
+        report("%s could not be found!\n", file_name);
+        return "";
+    }
+
+    return std::string{(std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>())};
+#else
     std::string s;
     FILE *      f;
     u64         fsize;
@@ -114,9 +119,10 @@ std::string string_file(const char *file_name) {
     fclose(f);
 
     return s;
+#endif
 }
 
-void split_string(const std::string &str, string_array *out, char delim) {
+void SplitString(const std::string &str, String_Array *out, char delim) {
     std::stringstream ss(str);
     std::string       token;
 
@@ -128,7 +134,7 @@ void split_string(const std::string &str, string_array *out, char delim) {
     }
 }
 
-i32 str_to_i32(const std::string &string, i32 default_value) {
+i32 StrToI32(const std::string &string, i32 default_value) {
     i32 return_value = default_value;
 
     try {
@@ -139,7 +145,7 @@ i32 str_to_i32(const std::string &string, i32 default_value) {
     return return_value;
 }
 
-f32 str_to_f32(const std::string &string, f32 default_value) {
+f32 StrToF32(const std::string &string, f32 default_value) {
     f32 return_value = default_value;
 
     try {
@@ -150,29 +156,29 @@ f32 str_to_f32(const std::string &string, f32 default_value) {
     return return_value;
 }
 
-f64 get_time_micro() {
-    return timer.getTimeMicro();
+f64 GetTimeMicro() {
+    return timer.GetTimeMicro();
 }
 
-f64 get_time_ms() {
-    return timer.getTimeMs();
+f64 GetTimeMs() {
+    return timer.GetTimeMs();
 }
 
-i32 random_i32(i32 upper_bound) {
+i32 RandomI32(i32 upper_bound) {
     uint32_t s = xorshift32();
     return ((s - 1) % upper_bound);
 }
 
-void random_seed(uint32_t seed) {
+void RandomSeed(uint32_t seed) {
     random_state = seed;
 }
 
-f32 random_f32() {
+f32 RandomF32() {
     uint32_t s = xorshift32();
     return f32(s - 1) / f32(0xFFFFFFFF);
 }
 
-std::string left_pad(std::string in, i32 min_len, char padding) {
+std::string LeftPad(std::string in, i32 min_len, char padding) {
     while (in.length() < min_len) {
         in = padding + in;
     }
@@ -180,23 +186,23 @@ std::string left_pad(std::string in, i32 min_len, char padding) {
     return in;
 }
 
-vec3 random_unit_in_disc() {
+vec3 RandomUnitInDisc() {
     vec3 p;
     do {
-        p = 2.0f * vec3{random_f32(), random_f32(), 0.0f} - vec3{1.0f, 1.0f, 0.0f};
-    } while (vec3_dot(p, p) >= 1.0f);
+        p = 2.0f * vec3{RandomF32(), RandomF32(), 0.0f} - vec3{1.0f, 1.0f, 0.0f};
+    } while (Vec3Dot(p, p) >= 1.0f);
 
     return p;
 }
 
-vec3 random_in_unit_sphere() {
+vec3 RandomInUnitSphere() {
     vec3 p;
     vec3 x;
 
     do {
-        x.xyz[0] = random_f32();
-        x.xyz[1] = random_f32();
-        x.xyz[2] = random_f32();
+        x.xyz[0] = RandomF32();
+        x.xyz[1] = RandomF32();
+        x.xyz[2] = RandomF32();
 
         p = 2.0f * x - vec3{1.0f, 1.0f, 1.0f};
     } while (p.length_squared() >= 1.0f);
@@ -213,9 +219,7 @@ vec3 rgb2vec3(i32 r, i32 g, i32 b, f32 intensity) {
                 map_range(f32(b), 0.0f, 256.0f, 0.0f, 1.0f) * intensity);
 }
 
-#if 1
-// new
-std::string stringf(const char *format, ...) {
+std::string StringF(const char *format, ...) {
     std::string string_buffer;
     va_list     args;
     int         newLen;
@@ -235,57 +239,29 @@ std::string stringf(const char *format, ...) {
     return string_buffer;
 }
 
-#else
-
-// old
-std::string stringf(const char *format, ...) {
-    static std::string string_buffer;
-    va_list            args;
-    int                newLen;
-
-    va_start(args, format);
-    newLen = _vscprintf(format, args) + 1;
-    va_end(args);
-
-    if (newLen > string_buffer.capacity()) {
-        string_buffer.resize(newLen, 0);
-    }
-
-    va_start(args, format);
-    vsprintf_s((char *)string_buffer.c_str(), newLen, format, args);
-    va_end(args);
-
-    // we don;t want that zero at the end
-    string_buffer.pop_back();
-
-    return string_buffer;
-}
-#endif
-
-std::wstring string_to_wstring(const std::string &string) {
-    // std::string                                            narrow = converter.to_bytes(wide_utf16_source_string);
+std::wstring StringToWstring(const std::string &string) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::wstring                                           wide = converter.from_bytes(string);
 
     return wide;
 }
 
-void take_screenshot(const char *file_name, array_of<u8> &color_buffer, i32 w, i32 h) {
+void TakeScreenshot(const char *file_name, Array_Of<u8> &color_buffer, i32 w, i32 h) {
     std::ofstream text_file;
     text_file.open(file_name);
 
     report("writing %s ...\n", file_name);
-    std::string temp_str = stringf("P3\n%d %d\n255\n", w, h);
+    std::string temp_str = StringF("P3\n%d %d\n255\n", w, h);
     for (i32 i = 0; i < color_buffer.size(); i += 3) {
         // RGB(normal humans) <-> BGR(Win32)
-        temp_str += stringf("%d %d %d\n", color_buffer[i + 2], color_buffer[i + 1], color_buffer[i]);
+        temp_str += StringF("%d %d %d\n", color_buffer[i + 2], color_buffer[i + 1], color_buffer[i]);
     }
 
     text_file << temp_str;
     report("done!\n");
 }
 
-void panic(string panic_string) {
+void Panic(string panic_string) {
     if (already_panicked) {
         return;
     }
@@ -296,7 +272,7 @@ void panic(string panic_string) {
     ExitProcess(0);
 }
 
-void util_test_code() {
+void RunTestCode() {
     sse_f32x4 a;
     sse_f32x4 b;
     sse_f32x4 c;

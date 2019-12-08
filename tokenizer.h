@@ -22,42 +22,42 @@ enum Token_Type {
 };
 
 struct Token {
-    Token_Type  type;
-    std::string text;
-    f32         fl_value;
-    i32         int_value;
+    Token_Type type;
+    string     text;
+    f32        fl_value;
+    i32        int_value;
 
-    bool identifier_match(const string &t) {
+    bool Identifier_Match(const string &t) {
         return (type == Token_Identifier && text == t);
     }
 };
 
 struct Lexer {
-    struct tokenizer_state {
-        bool        ok;
-        bool        eof;
-        i8          script_pointer;
-        i32         line;
-        u64         cursor;
-        std::string error;
+    struct Tokenizer_State {
+        bool   ok;
+        bool   eof;
+        i8     script_pointer;
+        i32    line;
+        u64    cursor;
+        string error;
     } state;
 
-    std::string input;
-    Token       next_token;
-    bool        is_alpha(i8 c);
-    bool        is_number(i8 c);
-    void        refill();
-    std::string forward(int count);
+    string input;
+    Token  next_token;
+    bool   IsAlpha(i8 c);
+    bool   IsNumber(i8 c);
+    void   Refill();
+    string Forward(int count);
 
-    void        error(std::string error);
-    Token       peek_token();
-    bool        expect_token(Token &t, Token_Type expected);
-    bool        expect_identifier(Token &t, const string &text);
-    Token       get_token();
-    std::string consume_line();
-    void        from_file(const i8 *file_name);
-    void        skip_tokens(i32 n);
-    bool        stopped_parsing();
+    void   Error(string error);
+    Token  PeekToken();
+    bool   ExpectToken(Token &t, Token_Type expected);
+    bool   ExpectIdentifier(Token &t, const string &text);
+    Token  GetToken();
+    string ConsumeLine();
+    void   FromFile(const i8 *file_name);
+    void   SkipTokens(i32 n);
+    bool   StoppedParsing();
 };
 
 #endif

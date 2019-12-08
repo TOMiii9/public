@@ -1,17 +1,17 @@
 #include "tokenizer.h"
 #include "util.h"
 
-bool Lexer::is_alpha(i8 c) {
+bool Lexer::IsAlpha(i8 c) {
     bool b = ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
     return b;
 }
 
-bool Lexer::is_number(i8 c) {
+bool Lexer::IsNumber(i8 c) {
     bool b = ((c >= '0') && (c <= '9'));
     return b;
 }
 
-void Lexer::refill() {
+void Lexer::Refill() {
     u64 remaining_characters = input.length() - state.cursor;
     if (remaining_characters == 0 || state.cursor >= input.length()) {
         state.script_pointer = 0;
@@ -20,46 +20,46 @@ void Lexer::refill() {
     }
 }
 
-std::string Lexer::forward(int count) {
-    std::string s;
+string Lexer::Forward(int count) {
+    string s;
     for (int i = 0; i < count; i++) {
         if (state.cursor + i < input.length()) {
             s += input[state.cursor + i];
         }
     }
     state.cursor += count;
-    refill();
+    Refill();
     return s;
 }
 
-std::string Lexer::consume_line() {
-    std::string s;
+string Lexer::ConsumeLine() {
+    string s;
     while (state.script_pointer && state.script_pointer != '\n') {
-        s += forward(1);
+        s += Forward(1);
     }
     return s;
 }
 
-Token Lexer::peek_token() {
-    tokenizer_state temp  = state;
-    Token           token = get_token();
+Token Lexer::PeekToken() {
+    Tokenizer_State temp  = state;
+    Token           token = GetToken();
     state                 = temp; // reset the tokenizer to the state before 'get_token'
 
     return token;
 }
 
-bool Lexer::expect_token(Token &t, Token_Type expected) {
-    Token tmp    = peek_token();
+bool Lexer::ExpectToken(Token &t, Token_Type expected) {
+    Token tmp    = PeekToken();
     bool  result = (tmp.type == expected);
     if (result) {
-        t = get_token();
+        t = GetToken();
     }
     return result;
 }
 
-bool Lexer::expect_identifier(Token &t, const string &text) {
+bool Lexer::ExpectIdentifier(Token &t, const string &text) {
     bool result = false;
-    if (expect_token(t, Token_Identifier)) {
+    if (ExpectToken(t, Token_Identifier)) {
         if (t.text == text) {
             result = true;
         }
@@ -68,7 +68,7 @@ bool Lexer::expect_identifier(Token &t, const string &text) {
     return result;
 }
 
-Token Lexer::get_token() {
+Token Lexer::GetToken() {
     while (1) {
         next_token = {};
 
@@ -79,7 +79,7 @@ Token Lexer::get_token() {
 
         i8 current_char = state.script_pointer;
         next_token.text += current_char;
-        forward(1);
+        Forward(1);
         switch (current_char) {
             case '\0':
                 next_token.type = Token_End;
@@ -90,8 +90,8 @@ Token Lexer::get_token() {
                 next_token.type = Token_Forward_Slash;
                 return next_token;
 
-            case '#':           // TODO: comment tokens are hard coded
-                consume_line(); // ignore comments
+            case '#':          // TODO: comment tokens are hard coded
+                ConsumeLine(); // ignore comments
                 continue;
 
             case '{':
@@ -109,10 +109,10 @@ Token Lexer::get_token() {
             case '"':
                 next_token.type = Token_String;
                 while (state.script_pointer && state.script_pointer != '"') {
-                    next_token.text += forward(1);
+                    next_token.text += Forward(1);
                 }
                 if (state.script_pointer && state.script_pointer == '"') {
-                    next_token.text += forward(1);
+                    next_token.text += Forward(1);
                 }
                 if (next_token.text[0] == '"') {
                     next_token.text.erase(0, 1);
@@ -136,24 +136,24 @@ Token Lexer::get_token() {
                 continue;
 
             default:
-                if (is_alpha(current_char)) {
+                if (IsAlpha(current_char)) {
                     next_token.type = Token_Identifier;
-                    while (is_alpha(state.script_pointer) || is_number(state.script_pointer) || state.script_pointer == '.' ||
+                    while (IsAlpha(state.script_pointer) || IsNumber(state.script_pointer) || state.script_pointer == '.' ||
                            state.script_pointer == '_') {
-                        next_token.text += forward(1);
+                        next_token.text += Forward(1);
                     }
-                } else if (is_number(current_char) || current_char == '-') {
+                } else if (IsNumber(current_char) || current_char == '-') {
                     next_token.type = Token_Number;
-                    while (is_number(state.script_pointer)) {
-                        next_token.text += forward(1);
+                    while (IsNumber(state.script_pointer)) {
+                        next_token.text += Forward(1);
                     }
 
                     if (state.script_pointer == '.') {
                         next_token.text += '.';
-                        forward(1);
+                        Forward(1);
 
-                        while (is_number(state.script_pointer)) {
-                            next_token.text += forward(1);
+                        while (IsNumber(state.script_pointer)) {
+                            next_token.text += Forward(1);
                         }
                         // TODO: atof
                     } else {
@@ -170,7 +170,7 @@ Token Lexer::get_token() {
     }
 }
 
-void Lexer::error(std::string error) {
+void Lexer::Error(string error) {
     if (!state.ok) {
         return;
     }
@@ -180,18 +180,18 @@ void Lexer::error(std::string error) {
     report("%s Line: %d Current token: '%s'\n", error.c_str(), state.line, next_token.text.c_str());
 }
 
-void Lexer::from_file(const i8 *file_name) {
-    input        = string_file(file_name);
+void Lexer::FromFile(const i8 *file_name) {
+    input        = StringFile(file_name);
     state.line   = 1;
     state.cursor = 0;
     state.ok     = true;
     state.eof    = false;
-    refill();
+    Refill();
 }
 
-void Lexer::skip_tokens(i32 n) {
+void Lexer::SkipTokens(i32 n) {
     while (n > 0) {
-        Token t = get_token();
+        Token t = GetToken();
         if (t.type == Token_End || !state.ok) {
             return;
         }
@@ -199,6 +199,6 @@ void Lexer::skip_tokens(i32 n) {
     }
 }
 
-bool Lexer::stopped_parsing() {
+bool Lexer::StoppedParsing() {
     return !state.ok || state.eof;
 }
