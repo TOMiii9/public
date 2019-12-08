@@ -23,15 +23,15 @@ using i8  = char;
 using u8  = unsigned char;
 
 template <class T>
-class AlignedAllocator {
+class Aligned_Allocator {
   public:
     using value_type = T;
 
-    AlignedAllocator() noexcept {
+    Aligned_Allocator() noexcept {
     }
 
     template <class U>
-    AlignedAllocator(AlignedAllocator<U> const &) noexcept {
+    Aligned_Allocator(Aligned_Allocator<U> const &) noexcept {
     }
 
     value_type *allocate(std::size_t n) {
@@ -47,27 +47,27 @@ class AlignedAllocator {
 };
 
 template <class T, class U>
-bool operator==(const AlignedAllocator<T> &lhs, const AlignedAllocator<U> &rhs) {
+bool operator==(const Aligned_Allocator<T> &lhs, const Aligned_Allocator<U> &rhs) {
     return true;
 }
 
 template <class T, class U>
-bool operator!=(const AlignedAllocator<T> &lhs, const AlignedAllocator<U> &rhs) {
+bool operator!=(const Aligned_Allocator<T> &lhs, const Aligned_Allocator<U> &rhs) {
     return false;
 }
 
 template <typename ItemType>
-using Array_Of = std::vector<ItemType, AlignedAllocator<ItemType>>;
+using Array_Of = std::vector<ItemType, Aligned_Allocator<ItemType>>;
 
 template <typename ItemType>
-using list_of = std::list<ItemType, AlignedAllocator<ItemType>>;
+using List_Of = std::list<ItemType, Aligned_Allocator<ItemType>>;
 
 template <typename KeyType, typename ItemType>
 // using map_of = std::map<KeyType, ItemType, std::less<KeyType>, AlignedAllocator<std::pair<KeyType, ItemType>>>;
 // TODO: FIX THIS LATER
 using Map_Of = std::map<KeyType, ItemType>;
 
-using string_array = Array_Of<std::string>;
+using String_Array = Array_Of<std::string>;
 
 using atomic_i32 = std::atomic<i32>;
 
