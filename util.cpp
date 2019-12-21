@@ -14,10 +14,13 @@
 #include <locale>
 #include <codecvt>
 
-// TODO: get rid of the thread_local stuff - but keep it fast!
+// static FILE *         g_logFile             = fopen("_debug.txt", "w");
 thread_local uint32_t random_state = 1234;
 static High_Res_Timer timer;
 static bool           already_panicked = false;
+static std::mutex     g_reportMutex;
+static std::string    g_debug_string_buffer = "init";
+static HWND           con_handle            = 0;
 
 inline uint32_t xorshift32() {
     random_state ^= random_state << 13;
@@ -27,58 +30,57 @@ inline uint32_t xorshift32() {
     return random_state;
 }
 
-static std::mutex  g_reportMutex;
-static FILE *      g_logFile             = fopen("_debug.txt", "w");
-static std::string g_debug_string_buffer = "init";
+void SetConsoleHistoryWndHandle(HWND con) {
+    con_handle = con;
+}
 
 void report(const char *format, ...) {
     std::lock_guard<std::mutex> theLock(g_reportMutex);
 
-    static std::string stringBuffer;
-    static bool        debuggerPresent = !!IsDebuggerPresent();
-    static bool        allow_console   = false;
-    static bool        console_visible = false;
-    va_list            args;
-    int                newLen;
+    static char *string_buffer          = NULL;
+    static i32   string_buffer_capacity = 0;
+    static bool  debugger_present       = !!IsDebuggerPresent();
+    int          new_len;
 
-    if (allow_console) {
-        if (!console_visible) {
-            HANDLE stdHandle;
-            int    hConsole;
-            FILE * fp;
+    va_list args1;
+    va_start(args1, format);
+    new_len = _vscprintf(format, args1) + 1;
+    va_end(args1);
 
-            console_visible = true;
+    if (new_len > string_buffer_capacity) {
+        string_buffer_capacity = new_len;
+        string_buffer          = (char *)realloc(string_buffer, string_buffer_capacity);
+    }
 
-            AllocConsole();
+    va_start(args1, format);
+    vsprintf_s(string_buffer, new_len, format, args1);
+    va_end(args1);
 
-            stdHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-            hConsole  = _open_osfhandle((intptr_t)stdHandle, _O_TEXT);
-            fp        = _fdopen(hConsole, "w");
-            freopen_s(&fp, "CONOUT$", "w", stdout);
+    if (debugger_present) {
+        OutputDebugStringA(string_buffer);
+    }
+
+    std::string tmp;
+    char *      p = string_buffer;
+    while (*p) {
+        if (*p == '\n') {
+            tmp += "\r\n";
+        } else {
+            tmp += *p;
         }
+        p++;
     }
 
-    va_start(args, format);
-    newLen = _vscprintf(format, args) + 1;
-
-    if (newLen > stringBuffer.capacity()) {
-        stringBuffer.resize(newLen, 0);
+    if (con_handle) {
+        SendMessageA(con_handle, EM_SETSEL, 0, -1);
+        SendMessageA(con_handle, EM_SETSEL, -1, -1);
+        SendMessageA(con_handle, EM_LINESCROLL, 0, 0xffff);
+        SendMessageA(con_handle, EM_SCROLLCARET, 0, 0);
+        SendMessageA(con_handle, EM_REPLACESEL, 0, (LPARAM)tmp.c_str());
     }
 
-    vsprintf_s((char *)stringBuffer.c_str(), newLen, format, args);
-    va_end(args);
-
-    // printf(string_buffer.c_str());
-    if (debuggerPresent) {
-        OutputDebugStringA(stringBuffer.c_str());
-    }
-
-    if (console_visible) {
-        printf(stringBuffer.c_str());
-    }
-
-    fprintf_s(g_logFile, "%s", stringBuffer.c_str());
-    fflush(g_logFile);
+    // fprintf_s(g_logFile, "%s", stringBuffer.c_str());
+    // fflush(g_logFile);
 }
 
 String_Array VectorFile(const char *file_name) {
@@ -220,21 +222,23 @@ vec3 rgb2vec3(i32 r, i32 g, i32 b, f32 intensity) {
 }
 
 std::string StringF(const char *format, ...) {
-    std::string string_buffer;
-    va_list     args;
-    int         newLen;
+    static char *string_buffer          = NULL;
+    static i32   string_buffer_capacity = 0;
+    int          new_len;
 
-    va_start(args, format);
-    newLen = _vscprintf(format, args) + 1;
-    va_end(args);
+    va_list args1;
+    va_start(args1, format);
+    new_len = _vscprintf(format, args1) + 1;
+    va_end(args1);
 
-    string_buffer.resize(newLen, 0);
+    if (new_len > string_buffer_capacity) {
+        string_buffer_capacity = new_len;
+        string_buffer          = (char *)realloc(string_buffer, string_buffer_capacity);
+    }
 
-    va_start(args, format);
-    vsprintf_s((char *)string_buffer.c_str(), newLen, format, args);
-    va_end(args);
-
-    string_buffer.pop_back();
+    va_start(args1, format);
+    vsprintf_s(string_buffer, new_len, format, args1);
+    va_end(args1);
 
     return string_buffer;
 }

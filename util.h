@@ -215,6 +215,7 @@ std::wstring StringToWstring(const std::string &string);
 void         TakeScreenshot(const char *file_name, Array_Of<u8> &color_buffer, i32 w, i32 h);
 void         Panic(string panic_string);
 void         RunTestCode();
+void         SetConsoleHistoryWndHandle(HWND con);
 
 template <typename Type>
 void ArrayPatternFill(Array_Of<Type> &array, i32 n, Array_Of<Type> pattern) {
